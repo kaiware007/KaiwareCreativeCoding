@@ -34,7 +34,7 @@ namespace UniversalGravitation
         private int positionHistoryCount = 0;
 
         private Thread thread = null;
-        private int simulationCount = 0;
+        //private int simulationCount = 0;
 
         [HideInInspector]
         public bool isEnd = false;
@@ -73,7 +73,7 @@ namespace UniversalGravitation
                 planetList[i].ResetParam();
             }
 
-            simulationCount = 0;
+            //simulationCount = 0;
             isPlay = true;
             isEnd = false;
             goalDistanceMin = float.MaxValue;
@@ -154,7 +154,7 @@ namespace UniversalGravitation
                 }
 
                 //simulationCount = 2;
-                simulationCount = i;
+                //simulationCount = i;
                 //Debug.Log("iterationCount " + i);
                 isPlay = false;
                 //Thread.Sleep(0);

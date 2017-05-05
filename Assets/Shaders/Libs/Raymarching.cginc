@@ -3,6 +3,7 @@
 
 #include "UnityCG.cginc"
 
+float3 GetCameraPosition(float3 invScale) { return _WorldSpaceCameraPos * invScale; }
 float3 GetCameraPosition()    { return _WorldSpaceCameraPos;      }
 float3 GetCameraForward()     { return -UNITY_MATRIX_V[2].xyz;    }
 float3 GetCameraUp()          { return UNITY_MATRIX_V[1].xyz;     }
