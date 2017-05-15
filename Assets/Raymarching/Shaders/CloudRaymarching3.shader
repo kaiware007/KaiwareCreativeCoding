@@ -166,8 +166,10 @@ Pass
 		//col.xyz *= lin;
 		col.xyz = lerp( col.xyz, bgcol, 1.0 - exp(-0.003*t*t) );
 		// front to back blending    
-		col.a *= 0.4;
+		//col.a *= 0.4;
+		col.a = den;
 		col.rgb *= col.a;
+		//col.rgb *= den;
 		return sum + col*(1.0 - sum.a);
 	}
 
@@ -202,19 +204,21 @@ Pass
 
 	float4 render(float3 position, float3 ro, float3 rd, float2 px) {
 		// background sky
-		float sun = clamp(dot(sundir, rd), 0, 1);
+		//float sun = clamp(dot(sundir, rd), 0, 1);
 		//float3 col = float3(0.6, 0.71, 0.75) - rd.y * 0.2 * float3(1.0, 0.5, 1.0) + 0.15 * 0.5;
 		float3 col = UNITY_LIGHTMODEL_AMBIENT.rgb;
-		col += 0.2 * float3(1, 0.6, 0.1) * pow(sun, 8);
+		//col += 0.2 * float3(1, 0.6, 0.1) * pow(sun, 8);
 		
 		// clouds
 		float4 res = raymarch(position, ro, rd, col, px);
-		col = col * (1.0 - res.w) + res.xyz;
+		//col = col * (1.0 - res.w) + res.xyz;
 
 		// sun glare
-		col += 0.2 * float3(1, 0.4, 0.2) * pow(sun, 3);
+		//col += 0.2 * float3(1, 0.4, 0.2) * pow(sun, 3);
 
-		return float4(col, 1);
+		//return float4(col, 1);
+		//return float4(res.rgb, 1);
+		return res;
 	}
 
     //GBufferOut frag(VertOutput i)

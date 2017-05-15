@@ -75,6 +75,7 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
 
         cs.SetBuffer(initKernel, "_Particles", particleBuffer);
         cs.SetBuffer(initKernel, "_DeadList", particlePoolBuffer);
+        cs.SetBuffer(initKernel, "_ActiveList", particleActiveBuffer);
         cs.Dispatch(initKernel, particleNum / THREAD_NUM_X, 1, 1);
     }
 

@@ -58,6 +58,14 @@ public class CloudRaymarching : RaymarchingRenderer {
             shaderData[0].clipThreashold = clipThreashold;
             shaderData[0].noiseRange = noiseRange;
             shaderDataBuffer.SetData(shaderData);
+
+            if (!useCommandBuffer)
+            {
+                //if (!quad_) quad_ = GenerateQuad();
+                material.SetBuffer("_ShaderData", shaderDataBuffer);
+                
+                //Graphics.DrawMesh(quad_, transform.localToWorldMatrix, material, 0);
+            }
         }
     }
 

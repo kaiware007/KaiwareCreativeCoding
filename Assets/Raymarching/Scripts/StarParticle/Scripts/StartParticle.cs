@@ -31,6 +31,7 @@ public class StartParticle : GPUParticleBase<StarData> {
 
         particleBuffer.SetData(starDataArray);
 
+        particleActiveBuffer.SetCounterValue(0);
         cs.SetBuffer(initKernel, "_Particles", particleBuffer);
         cs.SetBuffer(initKernel, "_ActiveList", particleActiveBuffer);
         cs.Dispatch(initKernel, particleNum / THREAD_NUM_X, 1, 1);

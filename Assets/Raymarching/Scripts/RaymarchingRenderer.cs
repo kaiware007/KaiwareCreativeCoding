@@ -2,9 +2,12 @@
 using UnityEngine.Rendering;
 using System.Collections.Generic;
 
-[ExecuteInEditMode]
+//[ExecuteInEditMode]
 public abstract class RaymarchingRenderer : MonoBehaviour
 {
+
+    public bool useCommandBuffer = true;
+
     protected Dictionary<Camera, CommandBuffer> cameras_ = new Dictionary<Camera, CommandBuffer>();
     protected Mesh quad_;
 
@@ -51,11 +54,54 @@ public abstract class RaymarchingRenderer : MonoBehaviour
     void Start()
     {
         CleanUp();
+
+        //if (!quad_) quad_ = GenerateQuad();
     }
 
     void OnWillRenderObject()
     {
-        UpdateCommandBuffer();
+        if (useCommandBuffer)
+        {
+            UpdateCommandBuffer();
+        }
+        //else
+        //{
+        //    var act = gameObject.activeInHierarchy && enabled;
+        //    if (!act)
+        //    {
+        //        //OnDisable();
+        //        return;
+        //    }
+
+        //    var camera = Camera.current;
+        //    if (!camera || ((Camera.current.cullingMask & (1 << gameObject.layer)) == 0)) return;
+            
+        //    if (!quad_) quad_ = GenerateQuad();
+        //    Graphics.DrawMesh(quad_, transform.localToWorldMatrix, material, gameObject.layer);
+        //}
+    }
+
+    private void OnRenderObject()
+    {
+        if (!useCommandBuffer)
+        {
+            var act = gameObject.activeInHierarchy && enabled;
+            if (!act)
+            {
+                //OnDisable();
+                return;
+            }
+
+            var camera = Camera.current;
+            if (!camera || ((Camera.current.cullingMask & (1 << gameObject.layer)) == 0)) return;
+
+            if (!quad_) quad_ = GenerateQuad();
+
+            material.SetPass(0);
+            Graphics.DrawMeshNow(quad_, transform.localToWorldMatrix, 0);
+            //buffer.DrawMesh(quad_, Matrix4x4.identity, material, 0, 0);
+
+        }
     }
 
     void UpdateCommandBuffer()

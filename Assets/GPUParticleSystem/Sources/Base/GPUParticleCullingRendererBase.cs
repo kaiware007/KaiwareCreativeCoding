@@ -80,7 +80,6 @@ public abstract class GPUParticleCullingRendererBase <T> : GPUParticleRendererBa
 
     void UpdateVertexBuffer(Camera camera)
     {
-        
         CullingData data = cameraDatas[camera];
         if (data == null)
         {
@@ -94,6 +93,9 @@ public abstract class GPUParticleCullingRendererBase <T> : GPUParticleRendererBa
     protected override void OnRenderObjectInternal()
     {
         var cam = Camera.current;
+
+        if ((cam.cullingMask & (1 << gameObject.layer)) == 0) return;
+
         if (isCulling)
         {
             if (!cameraDatas.ContainsKey(cam))
