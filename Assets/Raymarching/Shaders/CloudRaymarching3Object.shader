@@ -1,17 +1,18 @@
-﻿Shader "Raymarching/Cloud3"
+﻿Shader "Raymarching/Cloud3Object"
 {
 
 Properties
 {
     _MainTex ("Main Texture", 2D) = "" {}
 	_GradientTex("Gradient Texture", 2D) = "" {}
+	_NoiseScale("Noise Scale", Range(0,10)) = 1
 }
 
 SubShader
 {
 
 //Tags { "RenderType" = "Opaque" "DisableBatching" = "True" "Queue" = "Geometry+10" }
-Cull Off
+//Cull Off
 ZWrite Off
 Blend SrcAlpha One
 
@@ -94,21 +95,29 @@ Pass
 	sampler2D _GradientTex;
 	StructuredBuffer<ShaderData> _ShaderData;
 
+	float _NoiseScale;
+
 	static const float distanceArray[3] = { 2.5, 50, 100 };
 	static const float intensityArray[3] = { 0.2, 0.3, 0.5 };
 	//static const float intensityArray[3] = { 1.25, 1, 0.75};
 	//static const float3 sundir = normalize(float3(-1.0, 0.0, -1.0));
 	static const float3 sundir = normalize(_WorldSpaceLightPos0);
 
-	fixed GetNoise(float3 pos, float scale, float threashold, float invThreashold) {
-		fixed c1 = snoise(pos / scale) * 0.5 + 0.5;
-		fixed c2 = (c1 - threashold) * invThreashold;
-		return step(threashold, c1) * c2;
+	//fixed GetNoise(float3 pos, float scale, float threashold, float invThreashold) {
+	//	fixed c1 = snoise(pos / scale) * 0.5 + 0.5;
+	//	fixed c2 = (c1 - threashold) * invThreashold;
+	//	return step(threashold, c1) * c2;
+	//}
+
+	inline bool isInnerBox(float3 pos, float3 scale)
+	{
+		return all(max(scale * 0.5 - abs(pos), 0.0));
 	}
 
 	float map5(float3 p, float t)
 	{
 		float3 q = p - float3(0.0, 0.1, 1.0) * t;
+		//q *= _NoiseScale;
 		float f;
 		f = 0.50000*snoise(q); q = q*2.02;
 		f += 0.25000*snoise(q); q = q*2.03;
@@ -160,11 +169,11 @@ Pass
 		//float3 lin = UNITY_LIGHTMODEL_AMBIENT.rgb + float3(1.0, 1.0, 1.0)*dif;
 		//float3 lin = float3(1.0, 1.0, 1.0)*dif;
 		//float4 col = float4(lerp(float3(1.0, 0.95, 0.8), float3(0.25, 0.3, 0.35), den), den);
-		//float4 col = float4(lerp(UNITY_LIGHTMODEL_AMBIENT.rgb, _LightColor0.rgb, den), den);
+		float4 col = float4(lerp(UNITY_LIGHTMODEL_AMBIENT.rgb, _LightColor0.rgb, den), den);
 		//float4 col = float4(_LightColor0.rgb, den);
-		float4 col = float4(tex2D(_GradientTex, float2(clamp(den,0,1), 0.5)).rgb, den);
+		//float4 col = float4(tex2D(_GradientTex, float2(clamp(den,0,1), 0.5)).rgb, den);
 		//col.xyz *= lin;
-		col.xyz = lerp( col.xyz, bgcol, 1.0 - exp(-0.003*t*t) );
+		//col.xyz = lerp( col.xyz, bgcol, 1.0 - exp(-0.003*t*t) );
 		// front to back blending    
 		//col.a *= 0.4;
 		col.a = den;
@@ -173,7 +182,8 @@ Pass
 		return sum + col*(1.0 - sum.a);
 	}
 
-#define MARCH(STEPS,MAPLOD,T) for(int i=0; i<STEPS; i++) { float3 pos = position + ro + t*rd; if( sum.a > 0.99 ) break; float den = MAPLOD( pos, T ); if( den>0.01 ) { float dif =  clamp((den - MAPLOD(pos+0.3*sundir, T))/0.6, 0.0, 1.0 ); sum = integrate( sum, dif, den, bgcol, t ); } t += max(0.05,0.02*t); }
+#define MARCH(STEPS,MAPLOD,T) for(int i=0; i<STEPS; i++) { float3 pos = (position + t*rd) * _NoiseScale; /*if( sum.a > 0.99 ) break;*/ if (!isInnerBox(pos, _Scale)) break; float den = MAPLOD( pos, T ); if( den>0.01 ) { float dif =  clamp((den - MAPLOD(pos+0.3*sundir, T))/0.6, 0.0, 1.0 ); sum = integrate( sum, dif, den, bgcol, t ); } t += max(1,0.25*t); }
+//#define MARCH(STEPS,MAPLOD,T) for(int i=0; i<STEPS; i++) { float3 pos = position + ro + t*rd; if( sum.a > 0.99 ) break; float den = MAPLOD( pos, T ); if( den>0.01 ) { float dif =  clamp((den - MAPLOD(pos+0.3*sundir, T))/0.6, 0.0, 1.0 ); sum = integrate( sum, dif, den, bgcol, t ); } t += max(0.05, 0.02*t); }
 //#define MARCH(STEPS,MAPLOD,T) for(int i=0; i<STEPS; i++) { float3 pos = position + ro + t*rd; if( pos.y<-3.0 || pos.y>2.0 || sum.a > 0.99 ) break; float den = MAPLOD( pos, T ); if( den>0.01 ) { float dif =  clamp((den - MAPLOD(pos+0.3*sundir, T))/0.6, 0.0, 1.0 ); sum = integrate( sum, dif, den, bgcol, t ); } t += max(0.05,0.02*t); }
 //#define MARCH(STEPS,MAPLOD,T) 
 //for(int i=0; i<STEPS; i++) { 
@@ -193,7 +203,7 @@ Pass
 		float4 sum = float4(0, 0, 0, 0);
 		float t = 0;
 
-		int steps = 20;
+		int steps = 50;
 		MARCH(steps, map5, 1);
 		//MARCH(steps, map4, 1);
 		//MARCH(steps, map3, 1);
@@ -222,20 +232,24 @@ Pass
 	}
 
     //GBufferOut frag(VertOutput i)
-	fixed4 frag(VertOutput i) : SV_Target
+	fixed4 frag(VertObjectOutput i) : SV_Target
     {
 		//float distanceArray[3] = { 2.5, 50, 100 };
 
         float3 rayDir = GetRayDirection(i.screenPos);	// レイの方向
 
-        float3 camPos = GetCameraPosition(0.05) + float3(0, 0, 0);	// カメラの位置
+        //float3 camPos = GetCameraPosition(0.05) + float3(0, 0, 0);	// カメラの位置
         float maxDist = GetCameraMaxDistance();	// 最大移動距離
 
 		float div = 10;
         //float distance = _ShaderData[0].noiseScale / div;
 		float distance = _ShaderData[0].noiseRange;
 		float len = 0.0;
-        float3 pos = camPos + _ProjectionParams.y * rayDir;	// Near Planeから計算開始
+        //float3 pos = camPos + _ProjectionParams.y * rayDir;	// Near Planeから計算開始
+
+		float3 pos = ToLocal(i.worldPos) * _Scale;	// Local 座標系
+		//float3 pos = i.worldPos;	// World 座標系
+
 		int marchCount = 0;
 		int maxMarch = 512;
 

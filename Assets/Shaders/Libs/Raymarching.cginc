@@ -11,13 +11,21 @@ float3 GetCameraRight()       { return UNITY_MATRIX_V[0].xyz;     }
 float  GetCameraFocalLength() { return abs(UNITY_MATRIX_P[1][1]); }
 float  GetCameraMaxDistance() { return _ProjectionParams.z - _ProjectionParams.y; }
 
+float4 _Scale;
+
+inline float3 ToLocal(float3 pos)
+{
+	//return mul(unity_WorldToObject, float4(pos, 1.0)).xyz * _Scale;
+	return mul(unity_WorldToObject, float4(pos, 1.0)).xyz;
+}
+
 float2 GetScreenPos(float4 screenPos)
 {
 #if UNITY_UV_STARTS_AT_TOP
-    screenPos.y *= -1.0;
+	screenPos.y *= -1.0;
 #endif
-    screenPos.x *= _ScreenParams.x / _ScreenParams.y;
-    return float2(screenPos.x, screenPos.y);
+	screenPos.x *= _ScreenParams.x / _ScreenParams.y;
+	return screenPos.xy / screenPos.w;
 }
 
 float3 GetRayDirection(float4 screenPos)
@@ -59,13 +67,22 @@ float3 GetNormal(float3 pos)
 
 struct VertInput
 {
-    float4 vertex : POSITION;
+	float4 vertex : POSITION;
+	float3 normal : NORMAL;
 };
 
 struct VertOutput
 {
     float4 vertex    : SV_POSITION;
     float4 screenPos : TEXCOORD0;
+};
+
+struct VertObjectOutput
+{
+	float4 vertex      : SV_POSITION;
+	float4 screenPos   : TEXCOORD0;
+	float4 worldPos    : TEXCOORD1;
+	float3 worldNormal : TEXCOORD2;
 };
 
 struct GBufferOut
@@ -85,4 +102,13 @@ VertOutput vert(VertInput v)
     return o;
 }
 
+VertObjectOutput vert_object(VertInput v)
+{
+	VertObjectOutput o;
+	o.vertex = UnityObjectToClipPos(v.vertex);
+	o.screenPos = o.vertex;
+	o.worldPos = mul(unity_ObjectToWorld, v.vertex);
+	o.worldNormal = mul(unity_ObjectToWorld, v.normal);
+	return o;
+}
 #endif
